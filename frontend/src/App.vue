@@ -1,50 +1,17 @@
 <template>
   <div class="app">
-    <header>
-      <h1>E-Commerce Store</h1>
-      <p>Browse our amazing products</p>
-    </header>
-
-    <main>
-      <div v-if="loading" class="loading">Loading products...</div>
-      <div v-else-if="error" class="error">{{ error }}</div>
-      <div v-else class="products-grid">
-        <ProductCard
-          v-for="product in products"
-          :key="product.id"
-          :product="product"
-        />
+    <nav class="navbar">
+      <router-link to="/" class="logo">E-Shop</router-link>
+      <div class="nav-links">
+        <router-link to="/">Home</router-link>
+        <router-link to="/admin">Admin</router-link>
       </div>
-    </main>
+    </nav>
+    <router-view />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import ProductCard from './components/ProductCard.vue'
-
-const products = ref([])
-const loading = ref(true)
-const error = ref(null)
-
-const fetchProducts = async () => {
-  try {
-    const response = await fetch('http://localhost:8080/products')
-    if (!response.ok) {
-      throw new Error('Failed to fetch products')
-    }
-    const data = await response.json()
-    products.value = data.products
-  } catch (err) {
-    error.value = err.message
-  } finally {
-    loading.value = false
-  }
-}
-
-onMounted(() => {
-  fetchProducts()
-})
 </script>
 
 <style>
@@ -63,39 +30,46 @@ body {
 .app {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 0 20px;
 }
 
-header {
-  text-align: center;
-  padding: 40px 0;
-}
-
-header h1 {
-  font-size: 36px;
-  color: #2c3e50;
-  margin-bottom: 8px;
-}
-
-header p {
-  color: #666;
-  font-size: 18px;
-}
-
-.products-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 24px;
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   padding: 20px 0;
+  border-bottom: 1px solid #e0e0e0;
+  margin-bottom: 20px;
 }
 
-.loading, .error {
-  text-align: center;
-  padding: 40px;
-  font-size: 18px;
+.logo {
+  font-size: 24px;
+  font-weight: bold;
+  color: #2c3e50;
+  text-decoration: none;
 }
 
-.error {
-  color: #e74c3c;
+.nav-links {
+  display: flex;
+  gap: 24px;
+}
+
+.nav-links a {
+  color: #666;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.nav-links a:hover {
+  color: #333;
+  background: #e0e0e0;
+}
+
+.nav-links a.router-link-active {
+  color: #3498db;
+  background: #ebf5fb;
 }
 </style>

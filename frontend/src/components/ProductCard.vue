@@ -1,7 +1,7 @@
 <template>
   <div class="product-card">
     <div class="product-image">
-      <img :src="`https://via.placeholder.com/200?text=${product.name.split(' ')[0]}`" :alt="product.name" />
+      <img :src="product.image" :alt="product.name" />
     </div>
     <div class="product-info">
       <span class="category">{{ product.category }}</span>
