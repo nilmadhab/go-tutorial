@@ -12,7 +12,8 @@
       "Bash(go install:*)",
       "Bash(psql:*)",
       "Bash(npm install:*)",
-      "Bash(go build:*)"
+      "Bash(go build:*)",
+      "Bash(go run:*)"
     ]
   }
 }

@@ -1,0 +1,13 @@
+
+  Useful sqlite3 commands:
+  # List all tables
+  sqlite3 test.db ".tables"
+
+  # Show table schema
+  sqlite3 test.db ".schema products"
+
+  # Query with headers and columns formatted
+  sqlite3 -header -column test.db "SELECT * FROM products;"
+
+  # Interactive mode
+  sqlite3 test.db
