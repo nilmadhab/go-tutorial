@@ -1,6 +1,45 @@
 <template>
   <div class="user-list">
-    <h2>Users</h2>
+    <div class="header-row">
+      <h2>Users</h2>
+      <button class="add-btn" @click="showForm = !showForm">
+        {{ showForm ? 'Cancel' : '+ Add User' }}
+      </button>
+    </div>
+
+    <!-- Add User Form -->
+    <div v-if="showForm" class="add-form">
+      <h3>Add New User</h3>
+      <form @submit.prevent="createUser">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input
+            id="username"
+            v-model="newUser.username"
+            type="text"
+            placeholder="Enter username"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input
+            id="password"
+            v-model="newUser.password"
+            type="password"
+            placeholder="Enter password"
+            required
+          />
+        </div>
+        <div class="form-actions">
+          <button type="submit" :disabled="creating">
+            {{ creating ? 'Creating...' : 'Create User' }}
+          </button>
+        </div>
+        <p v-if="formError" class="form-error">{{ formError }}</p>
+      </form>
+    </div>
+
     <div v-if="loading" class="loading">Loading...</div>
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else class="users-grid">
@@ -14,16 +53,13 @@
           <strong>Credit Card:</strong> {{ maskCardNumber(user.credit_card.number) }}
         </div>
 
-        <div v-if="user.notes && user.notes.length" class="user-notes">
-          <strong>Notes ({{ user.notes.length }}):</strong>
-          <ul>
-            <li v-for="note in user.notes" :key="note.id">
-              <span class="note-name">{{ note.name }}</span>
-              <span class="note-content">{{ note.content }}</span>
-            </li>
-          </ul>
+        <div class="user-summary">
+          <span>{{ user.notes?.length || 0 }} notes</span>
         </div>
-        <div v-else class="no-notes">No notes</div>
+
+        <router-link :to="`/users/${user.id}`" class="view-details-btn">
+          View Details &rarr;
+        </router-link>
       </div>
     </div>
   </div>
@@ -35,6 +71,10 @@ import { ref, onMounted } from 'vue'
 const users = ref([])
 const loading = ref(true)
 const error = ref(null)
+const showForm = ref(false)
+const creating = ref(false)
+const formError = ref(null)
+const newUser = ref({ username: '', password: '' })
 
 const maskCardNumber = (number) => {
   if (!number) return ''
@@ -54,6 +94,33 @@ const fetchUsers = async () => {
   }
 }
 
+const createUser = async () => {
+  creating.value = true
+  formError.value = null
+
+  try {
+    const response = await fetch('http://localhost:8080/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newUser.value)
+    })
+
+    if (!response.ok) {
+      const data = await response.json()
+      throw new Error(data.error || 'Failed to create user')
+    }
+
+    // Reset form and refresh list
+    newUser.value = { username: '', password: '' }
+    showForm.value = false
+    await fetchUsers()
+  } catch (e) {
+    formError.value = e.message
+  } finally {
+    creating.value = false
+  }
+}
+
 onMounted(fetchUsers)
 </script>
 
@@ -62,9 +129,95 @@ onMounted(fetchUsers)
   padding: 20px;
 }
 
-h2 {
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
+}
+
+h2 {
+  margin: 0;
   color: #333;
+}
+
+.add-btn {
+  padding: 10px 20px;
+  background: #27ae60;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.95em;
+}
+
+.add-btn:hover {
+  background: #219a52;
+}
+
+.add-form {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid #e0e0e0;
+}
+
+.add-form h3 {
+  margin: 0 0 15px 0;
+  color: #2c3e50;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  color: #555;
+  font-weight: 500;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1em;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #3498db;
+}
+
+.form-actions {
+  margin-top: 15px;
+}
+
+.form-actions button {
+  padding: 10px 25px;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1em;
+}
+
+.form-actions button:hover:not(:disabled) {
+  background: #2980b9;
+}
+
+.form-actions button:disabled {
+  background: #95a5a6;
+  cursor: not-allowed;
+}
+
+.form-error {
+  color: #e74c3c;
+  margin-top: 10px;
 }
 
 .users-grid {
@@ -108,34 +261,26 @@ h2 {
   font-family: monospace;
 }
 
-.user-notes ul {
-  list-style: none;
-  padding: 0;
-  margin: 10px 0 0 0;
-}
-
-.user-notes li {
-  background: #f0f7ff;
-  padding: 10px;
-  margin: 8px 0;
-  border-radius: 4px;
-  border-left: 3px solid #3498db;
-}
-
-.note-name {
-  font-weight: bold;
-  display: block;
-  color: #2c3e50;
-}
-
-.note-content {
+.user-summary {
   color: #666;
   font-size: 0.9em;
+  margin-bottom: 15px;
 }
 
-.no-notes {
-  color: #999;
-  font-style: italic;
+.view-details-btn {
+  display: block;
+  text-align: center;
+  padding: 10px 15px;
+  background: #3498db;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 0.95em;
+  transition: background 0.2s;
+}
+
+.view-details-btn:hover {
+  background: #2980b9;
 }
 
 .loading, .error {

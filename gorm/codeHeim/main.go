@@ -118,10 +118,70 @@ func getUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, users)
 }
 
+func getUserByID(c *gin.Context) {
+	id := c.Param("id")
+	var user User
+	if err := DB.Preload("Notes").Preload("CreditCard").First(&user, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+	c.JSON(http.StatusOK, user)
+}
+
 func getNotes(c *gin.Context) {
 	var notes []Note
 	DB.Find(&notes)
 	c.JSON(http.StatusOK, notes)
+}
+
+type CreateUserInput struct {
+	Username string `json:"username" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
+
+func createUser(c *gin.Context) {
+	var input CreateUserInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	user := User{Username: input.Username, Password: input.Password}
+	if err := DB.Create(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, user)
+}
+
+type CreateNoteInput struct {
+	Name    string `json:"name" binding:"required"`
+	Content string `json:"content" binding:"required"`
+	UserID  uint64 `json:"user_id" binding:"required"`
+}
+
+func createNote(c *gin.Context) {
+	var input CreateNoteInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Check if user exists
+	var user User
+	if err := DB.First(&user, input.UserID).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User not found"})
+		return
+	}
+
+	note := Note{Name: input.Name, Content: input.Content, UserID: input.UserID}
+	if err := DB.Create(&note).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create note"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, note)
 }
 
 func setupRouter() *gin.Engine {
@@ -139,7 +199,10 @@ func setupRouter() *gin.Engine {
 	api := r.Group("/api")
 	{
 		api.GET("/users", getUsers)
+		api.GET("/users/:id", getUserByID)
+		api.POST("/users", createUser)
 		api.GET("/notes", getNotes)
+		api.POST("/notes", createNote)
 	}
 
 	return r

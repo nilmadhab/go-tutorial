@@ -1,33 +1,26 @@
 <script setup>
-import { ref } from 'vue'
-import UserList from './components/UserList.vue'
-import NoteList from './components/NoteList.vue'
+import { useRoute } from 'vue-router'
+import { computed } from 'vue'
 
-const activeTab = ref('users')
+const route = useRoute()
+const isDetailPage = computed(() => route.name === 'user-detail')
 </script>
 
 <template>
   <div class="app">
-    <header>
+    <header v-if="!isDetailPage">
       <h1>CodeHeim GORM Demo</h1>
       <nav>
-        <button
-          :class="{ active: activeTab === 'users' }"
-          @click="activeTab = 'users'"
-        >
+        <router-link to="/" :class="{ active: route.name === 'users' }">
           Users
-        </button>
-        <button
-          :class="{ active: activeTab === 'notes' }"
-          @click="activeTab = 'notes'"
-        >
+        </router-link>
+        <router-link to="/notes" :class="{ active: route.name === 'notes' }">
           Notes
-        </button>
+        </router-link>
       </nav>
     </header>
     <main>
-      <UserList v-if="activeTab === 'users'" />
-      <NoteList v-if="activeTab === 'notes'" />
+      <router-view />
     </main>
   </div>
 </template>
@@ -69,22 +62,21 @@ nav {
   gap: 10px;
 }
 
-nav button {
+nav a {
   padding: 10px 20px;
-  border: none;
   background: #34495e;
   color: white;
   border-radius: 4px;
-  cursor: pointer;
+  text-decoration: none;
   font-size: 1em;
   transition: background 0.2s;
 }
 
-nav button:hover {
+nav a:hover {
   background: #4a6278;
 }
 
-nav button.active {
+nav a.active {
   background: #3498db;
 }
 
